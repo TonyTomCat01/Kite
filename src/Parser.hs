@@ -81,9 +81,9 @@ request =
         <*> query
         <*> ws
         <*> version
-        <*> char '\r'
+        <*> (string "\r" <|> string "")
   where
-    method = string "GET" <|> string "POST" <|> string "DELETE"
+    method = string "GET" <|> string "HEAD" <|> string "POST" <|> string "DELETE"
     query = many (satisfy (\x -> isAlpha x || (x == '/') || x == '.'))
     version = many (satisfy (\x -> isAlpha x || isDigit x || (x == '/') || x == '.'))
 
@@ -94,7 +94,7 @@ host =
         <*> ip
         <*> char ':'
         <*> port
-        <*> char '\r'
+        <*> (string "\r" <|> string "")
   where
     ip = string "localhost" <|> many (satisfy (\x -> isDigit x || x == '.'))
     port = many (satisfy isDigit)
@@ -104,7 +104,7 @@ keys =
         <$> stringLiteral
         <*> string ": "
         <*> stringLiteral
-        <*> char '\r'
+        <*> (string "\r" <|> string "")
 
 stringLiteral =
     many
@@ -117,9 +117,6 @@ ws = satisfy isSpace
 eof = Parser $ const (Just (("", "", ""), ""))
 
 ------------------------------------------------------
-
-readf = do
-    readFile "request.txt"
 
 -- OPTIM: Major optimizations required
 parseH t =

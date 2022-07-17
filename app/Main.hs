@@ -21,7 +21,7 @@ manageConnections sock =
             do
                 (conn, addr) <- accept sock
                 r <- recv conn 1024
-                -- managequeries ((head . parseH) (b r)) conn
+                managequeries ((head . parseH) (b r)) conn
                 close conn
 
 main :: IO ()

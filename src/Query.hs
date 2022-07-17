@@ -26,34 +26,26 @@ data Response = Response
     }
     deriving (Show)
 
+sendStr conn = sendAll conn . packStr
 con t = statuscode t <> headers t <> content t
 
-sendStr conn = sendAll conn . packStr
-
-query _ "/" conn = sendStr conn (msg ++ "Content-Type: text/html\n\n" ++ d)
-query NotImpleMented f conn = do
-    (sendAll conn . packStr)
-        ( con
-            Response
-                { statuscode = "HTTP/1.1 501 Not Implemented\n"
-                , headers = "\n"
-                , content = "\n"
-                }
-        )
 query GET f conn = do
-    handle
-        fileError
-        ( do
-            t <- (readFile . tail) f
-            (sendAll conn . packStr)
-                ( con
-                    Response
-                        { statuscode = "HTTP/1.1 200 OK\n"
-                        , headers = "Content-Type: text/" <> (tail . takeExtension) f
-                        , content = "\n\n" <> t
-                        }
+    if f == "/"
+        then sendStr conn (msg ++ "Content-Type: text/html\n\n" ++ d)
+        else
+            handle
+                fileError
+                ( do
+                    t <- (readFile . tail) f
+                    (sendAll conn . packStr)
+                        ( con
+                            Response
+                                { statuscode = "HTTP/1.1 200 OK\n"
+                                , headers = "Content-Type: text/" <> (tail . takeExtension) f
+                                , content = "\n\n" <> t
+                                }
+                        )
                 )
-        )
   where
     fileError (e :: SomeException) = do
         t <- readFile "notFound.html"
@@ -67,20 +59,23 @@ query GET f conn = do
                     }
             )
 query HEAD f conn = do
-    handle
-        fileError
-        ( do
-            t <- (readFile . tail) f
-            sendStr
-                conn
-                ( con
-                    Response
-                        { statuscode = "HTTP/1.1 200 OK\n"
-                        , headers = "Content-Type: text/html\n\n"
-                        , content = ""
-                        }
+    if f == "/"
+        then sendStr conn (msg ++ "Content-Type: text/html\n\n" ++ d)
+        else
+            handle
+                fileError
+                ( do
+                    t <- (readFile . tail) f
+                    sendStr
+                        conn
+                        ( con
+                            Response
+                                { statuscode = "HTTP/1.1 200 OK\n"
+                                , headers = "Content-Type: text/html\n\n"
+                                , content = ""
+                                }
+                        )
                 )
-        )
   where
     fileError (e :: SomeException) = do
         t <- readFile "notFound.html"
@@ -93,7 +88,16 @@ query HEAD f conn = do
                     , content = ""
                     }
             )
+query NotImpleMented f conn = do
+    (sendAll conn . packStr)
+        ( con
+            Response
+                { statuscode = "HTTP/1.1 501 Not Implemented\n"
+                , headers = "notI\n"
+                , content = "\n"
+                }
+        )
 
 managequeries i conn =
     let (a, b, c) = i
-     in query a b conn
+     in query (p a) b conn
