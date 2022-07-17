@@ -5,7 +5,7 @@ import Parser
 import Query
 import Util
 
--- TODO: Concurrency
+-- TODO: Concurrency and Optimizations
 
 manageConnections :: Socket -> IO ()
 manageConnections sock =

@@ -72,7 +72,7 @@ char c = satisfy (== c)
 string :: String -> Parser String
 string = mapM char
 
--- acceptp = const . (,) <$> many (satisfy isAlpha) <*> char '/' <*> many (satisfy isAlpha)
+-- OPTIM: Can these be much more efficient?
 
 request =
     (\x _ y _ z _ -> (x, y, z))
@@ -121,8 +121,7 @@ eof = Parser $ const (Just (("", "", ""), ""))
 readf = do
     readFile "request.txt"
 
--- d = fmap parseH readf
-
+-- OPTIM: Major optimizations required
 parseH t =
     fst <$> fromJust (mapM k t)
   where

@@ -6,6 +6,8 @@ import Control.Exception
 import Control.Monad
 import Util
 
+-- NOTE: I will refactor the mess below. Feel free to refactor, and submit a pr.
+
 data Query
     = GET
     | HEAD
