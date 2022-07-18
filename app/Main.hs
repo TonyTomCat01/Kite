@@ -11,7 +11,7 @@ manageConnections :: Socket -> IO ()
 manageConnections sock =
     handle
         ( \UserInterrupt -> do
-            seq id close sock
+            close sock
             putStrLn "\nUser Interrupt. Stopping Now"
         )
         loop
@@ -20,8 +20,9 @@ manageConnections sock =
         forever $
             do
                 (conn, addr) <- accept sock
+                putStrLn ("Connection from " <> show addr)
                 r <- recv conn 1024
-                managequeries ((head . parseH) (b r)) conn
+                managequeries ((return . head . parseH . lines . unpackStr) r) conn
                 close conn
 
 main :: IO ()

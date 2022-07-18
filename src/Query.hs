@@ -4,100 +4,152 @@ module Query where
 
 import Control.Exception
 import Control.Monad
+import Data.Either
+import Data.Time
 import Util
 
 -- NOTE: I will refactor the mess below. Feel free to refactor, and submit a pr.
 
-data Query
+data Method
     = GET
     | HEAD
     | NotImpleMented
-    deriving (Show)
+    deriving (Show, Eq)
 
-p :: String -> Query
+p :: String -> Method
 p "GET" = GET
 p "HEAD" = HEAD
 p _ = NotImpleMented
 
-data Response = Response
-    { statuscode :: String
-    , headers :: String
-    , content :: String
-    }
+data Response = Response String String String deriving (Show)
+
+type Error = String
+
+data Result = Either Error Response
     deriving (Show)
 
-sendStr conn = sendAll conn . packStr
-con t = statuscode t <> headers t <> content t
+sendStr conn = sendAll conn . packStr . con
+con (Response status headers content) = status <> headers <> content
 
-query GET f conn = do
+safeRead :: String -> IO String
+safeRead f = do
+    t <- try (readFile f) :: IO (Either IOException String)
+    return $ fromRight "" t
+
+noSuchFile method (e :: SomeException) = do
+    t <- safeRead notFound
+    time <- getCurrentTime
+    if method == HEAD
+        then
+            return $
+                Response
+                    "HTTP/1.1 404 Not Found\n"
+                    ( "Date: "
+                        <> show time
+                        <> "\nContent-Type: text/html\n"
+                        <> "Content-Length: "
+                        <> show (length t)
+                    )
+                    "\n\n"
+        else
+            if method == GET
+                then
+                    return $
+                        Response
+                            "HTTP/1.1 404 Not Found\n"
+                            ( "Date: "
+                                <> show time
+                                <> "\nContent-Type: text/html\n"
+                                <> "Content-Length: "
+                                <> show (length t)
+                                <> "\n\n"
+                            )
+                            t
+                else
+                    return $
+                        Response
+                            "HTTP/1.1 501 Not Implemented\n"
+                            ( "Date: "
+                                <> show time
+                            )
+                            "\n\n"
+
+query GET f = do
+    time <- getCurrentTime
+    root <- readFile rootFile
     if f == "/"
-        then sendStr conn (msg ++ "Content-Type: text/html\n\n" ++ d)
+        then
+            return $
+                Response
+                    msg
+                    ( "Date: "
+                        <> show time
+                        <> "\nContent-Type: text/html\nContent-Length: "
+                        <> show (length root)
+                        <> "\n\n"
+                    )
+                    root
         else
             handle
-                fileError
+                (noSuchFile GET)
                 ( do
                     t <- (readFile . tail) f
-                    (sendAll conn . packStr)
-                        ( con
-                            Response
-                                { statuscode = "HTTP/1.1 200 OK\n"
-                                , headers = "Content-Type: text/" <> (tail . takeExtension) f
-                                , content = "\n\n" <> t
-                                }
-                        )
+                    return $
+                        Response
+                            "HTTP/1.1 200 OK\n"
+                            ( "Date: "
+                                <> show time
+                                <> "\nContent-Type: text/"
+                                <> (tail . takeExtension) f
+                                <> "\nContent-Length: "
+                                <> show
+                                    (length t)
+                            )
+                            ("\n\n" <> t)
                 )
-  where
-    fileError (e :: SomeException) = do
-        t <- readFile "notFound.html"
-        sendStr
-            conn
-            ( con
-                Response
-                    { statuscode = "HTTP/1.1 404 Not Found\n"
-                    , headers = "Content-Type: text/html\n\n"
-                    , content = t
-                    }
-            )
-query HEAD f conn = do
+query HEAD f = do
+    time <- getCurrentTime
+    root <- readFile rootFile
     if f == "/"
-        then sendStr conn (msg ++ "Content-Type: text/html\n\n" ++ d)
+        then
+            return $
+                Response
+                    msg
+                    ( "Date: "
+                        <> show time
+                        <> "\nContent-Type: text/html\nContent-Length: "
+                        <> (show . length) root
+                    )
+                    "\n\n"
         else
             handle
-                fileError
+                (noSuchFile HEAD)
                 ( do
                     t <- (readFile . tail) f
-                    sendStr
-                        conn
-                        ( con
-                            Response
-                                { statuscode = "HTTP/1.1 200 OK\n"
-                                , headers = "Content-Type: text/html\n\n"
-                                , content = ""
-                                }
-                        )
+                    return $
+                        Response
+                            "HTTP/1.1 200 OK\n"
+                            ( "Date: "
+                                <> show time
+                                <> "\nContent-Type: text/"
+                                <> (tail . takeExtension) f
+                                <> "\nContent-Length: "
+                                <> show (length t)
+                            )
+                            "\n\n"
                 )
-  where
-    fileError (e :: SomeException) = do
-        t <- readFile "notFound.html"
-        sendStr
-            conn
-            ( con
-                Response
-                    { statuscode = "HTTP/1.1 404 Not Found\n"
-                    , headers = "Content-Type: text/html\n\n"
-                    , content = ""
-                    }
+query NotImpleMented f = do
+    time <- getCurrentTime
+    return $
+        Response
+            "HTTP/1.1 501 Not Implemented\n"
+            ( "Date: "
+                <> show time
+                <> "\nContent-Length: 0\n"
             )
-query NotImpleMented f conn = do
-    (sendAll conn . packStr)
-        ( con
-            Response
-                { statuscode = "HTTP/1.1 501 Not Implemented\n"
-                , headers = "notI\n"
-                , content = "\n"
-                }
-        )
+            "\n"
 
-managequeries i conn =
-    let (a, b, c) = i
-     in query (p a) b conn
+managequeries i conn = do
+    (a, b, c) <- i
+    r <- query (p a) b
+    sendStr conn r

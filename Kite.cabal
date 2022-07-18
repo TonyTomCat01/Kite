@@ -37,6 +37,7 @@ library
     , bytestring
     , filepath
     , network
+    , time
   default-language: Haskell2010
 
 executable Kite
@@ -52,6 +53,7 @@ executable Kite
     , bytestring
     , filepath
     , network
+    , time
   default-language: Haskell2010
 
 test-suite Kite-test
@@ -68,4 +70,5 @@ test-suite Kite-test
     , bytestring
     , filepath
     , network
+    , time
   default-language: Haskell2010

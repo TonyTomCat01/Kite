@@ -3,6 +3,10 @@
 
 module Parser (
     parseH,
+    parse,
+    stringLiteral,
+    stringL,
+    char,
     request,
     host,
     keys,
@@ -72,7 +76,7 @@ char c = satisfy (== c)
 string :: String -> Parser String
 string = mapM char
 
--- OPTIM: Can these be much more efficient?
+-- OPTIM: Can these be more efficient?
 
 request =
     (\x _ y _ z _ -> (x, y, z))

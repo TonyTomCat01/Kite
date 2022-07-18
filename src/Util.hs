@@ -6,9 +6,10 @@ module Util (
     unpackStr,
     packStr,
     msg,
-    d,
     recv,
     b,
+    notFound,
+    rootFile,
     Family (AF_INET),
     SockAddr (..),
     Socket,
@@ -62,6 +63,10 @@ msg :: String
 msg =
     "HTTP/1.1 200 OK\n"
 
-d = "<a href='#'>download</a>"
-
 b = lines . unpackStr
+
+-- 404 not found page
+notFound = "/home/tonytomcat/Downloads/notFound.html"
+
+-- sample website for testing
+rootFile = "/home/tonytomcat/Downloads/PortFolio/index.html"

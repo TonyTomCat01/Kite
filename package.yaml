@@ -23,6 +23,7 @@ dependencies:
 - base 
 - network
 - filepath
+- time
 - bytestring
 
 library:
