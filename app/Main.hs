@@ -22,8 +22,13 @@ manageConnections sock =
                 (conn, addr) <- accept sock
                 putStrLn ("Connection from " <> show addr)
                 r <- recv conn 1024
-                managequeries ((return . head . parseH . lines . unpackStr) r) conn
+                managequeries ((return . safeHead ("", "", "") . parseH . lines . unpackStr) r) conn
                 close conn
+
+safeHead c list =
+    if (not . null) list
+        then head list
+        else c
 
 main :: IO ()
 main = do

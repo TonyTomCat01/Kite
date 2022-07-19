@@ -66,7 +66,7 @@ msg =
 b = lines . unpackStr
 
 -- 404 not found page
-notFound = "/home/tonytomcat/Downloads/notFound.html"
+notFound = "/home/tonytomcat/Downloads/PortFolio/notFound.html"
 
 -- sample website for testing
 rootFile = "/home/tonytomcat/Downloads/PortFolio/index.html"

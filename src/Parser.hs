@@ -126,4 +126,5 @@ eof = Parser $ const (Just (("", "", ""), ""))
 parseH t =
     fst <$> fromJust (mapM k t)
   where
-    k = parse $ keys <|> request <|> host <|> eof
+    -- k = parse $ keys <|> request <|> host <|> eof
+    k = parse $ request <|> eof
