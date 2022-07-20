@@ -1,6 +1,7 @@
 module Main where
 
 import Control.Exception (AsyncException (UserInterrupt))
+import Log
 import Parser
 import Query
 import Util
@@ -20,9 +21,9 @@ manageConnections sock =
         forever $
             do
                 (conn, addr) <- accept sock
-                putStrLn ("Connection from " <> show addr)
+                logVal ("Connection from " <> show addr)
                 r <- recv conn 1024
-                managequeries ((return . safeHead ("", "", "") . parseH . lines . unpackStr) r) conn
+                managequeries ((return . fst . parseH . unpackStr) r) conn
                 close conn
 
 safeHead c list =
@@ -32,7 +33,7 @@ safeHead c list =
 
 main :: IO ()
 main = do
-    putStrLn "Starting"
+    logVal "Starting"
     sock <- socket AF_INET Stream 0
     setSocketOption sock ReuseAddr 1
     bind sock (SockAddrInet 1337 $ tupleToHostAddress (0, 0, 0, 0))

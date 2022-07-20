@@ -124,7 +124,11 @@ eof = Parser $ const (Just (("", "", ""), ""))
 
 -- OPTIM: Major optimizations required
 parseH t =
-    fst <$> fromJust (mapM k t)
-  where
-    -- k = parse $ keys <|> request <|> host <|> eof
-    k = parse $ request <|> eof
+    let Just (result, _) = parse ((,) <$> request <*> many keys) t
+     in result
+
+--   fst <$> fromJust (mapM k t)
+-- where
+--   k = parse $ (,) <$> request <*> keys
+
+-- k = parse $ request <|> eof

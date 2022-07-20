@@ -7,8 +7,8 @@ module Util (
     packStr,
     msg,
     recv,
-    b,
     notFound,
+    logFile,
     rootFile,
     Family (AF_INET),
     SockAddr (..),
@@ -63,7 +63,7 @@ msg :: String
 msg =
     "HTTP/1.1 200 OK\n"
 
-b = lines . unpackStr
+logFile = "/home/tonytomcat/Downloads/PortFolio/log.txt"
 
 -- 404 not found page
 notFound = "/home/tonytomcat/Downloads/PortFolio/notFound.html"
