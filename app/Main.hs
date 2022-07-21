@@ -1,5 +1,6 @@
 module Main where
 
+import Control.Concurrent
 import Control.Exception (AsyncException (UserInterrupt))
 import Log
 import Parser
@@ -23,19 +24,15 @@ manageConnections sock =
                 (conn, addr) <- accept sock
                 logVal ("Connection from " <> show addr)
                 r <- recv conn 1024
-                managequeries ((return . fst . parseH . unpackStr) r) conn
-                close conn
-
-safeHead c list =
-    if (not . null) list
-        then head list
-        else c
+                _ <- forkIO (managequeries (returnFstParseUnpack r) conn)
+                return ()
+    returnFstParseUnpack = return . fst . parseHttp . unpackStr
 
 main :: IO ()
 main = do
-    logVal "Starting"
+    logVal "\n\nStarting"
     sock <- socket AF_INET Stream 0
     setSocketOption sock ReuseAddr 1
     bind sock (SockAddrInet 1337 $ tupleToHostAddress (0, 0, 0, 0))
-    listen sock 4
+    listen sock maxConns
     manageConnections sock

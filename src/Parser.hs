@@ -2,10 +2,9 @@
 {-# LANGUAGE LambdaCase #-}
 
 module Parser (
-    parseH,
+    parseHttp,
     parse,
     stringLiteral,
-    stringL,
     char,
     request,
     host,
@@ -65,11 +64,6 @@ satisfy pred = do
     c <- item
     if pred c then return c else empty
 
-satS :: (String -> Bool) -> Parser String
-satS pred = do
-    c <- many item
-    if pred c then return c else empty
-
 char :: Char -> Parser Char
 char c = satisfy (== c)
 
@@ -81,15 +75,36 @@ string = mapM char
 request =
     (\x _ y _ z _ -> (x, y, z))
         <$> method
-        <*> ws
+        <*> satisfy isSpace
         <*> query
-        <*> ws
+        <*> satisfy isSpace
         <*> version
-        <*> (string "\r" <|> string "")
+        <*> string "\r"
   where
-    method = string "GET" <|> string "HEAD" <|> string "POST" <|> string "DELETE"
-    query = many (satisfy (\x -> isAlpha x || (x == '/') || x == '.'))
-    version = many (satisfy (\x -> isAlpha x || isDigit x || (x == '/') || x == '.'))
+    method =
+        string "GET"
+            <|> string "HEAD"
+            <|> string "POST"
+            <|> string "DELETE"
+    query =
+        many
+            ( satisfy
+                ( \x ->
+                    isAlpha x
+                        || x == '/'
+                        || x == '.'
+                )
+            )
+    version =
+        many
+            ( satisfy
+                ( \x ->
+                    isAlpha x
+                        || isDigit x
+                        || x == '/'
+                        || x == '.'
+                )
+            )
 
 host =
     (\h _ i _ p _ -> (h, i, p))
@@ -98,9 +113,17 @@ host =
         <*> ip
         <*> char ':'
         <*> port
-        <*> (string "\r" <|> string "")
+        <*> satisfy isSpace
   where
-    ip = string "localhost" <|> many (satisfy (\x -> isDigit x || x == '.'))
+    ip =
+        string "localhost"
+            <|> many
+                ( satisfy
+                    ( \x ->
+                        isDigit x
+                            || x == '.'
+                    )
+                )
     port = many (satisfy isDigit)
 
 keys =
@@ -108,27 +131,15 @@ keys =
         <$> stringLiteral
         <*> string ": "
         <*> stringLiteral
-        <*> (string "\r" <|> string "")
+        <*> satisfy isSpace
 
 stringLiteral =
     many
-        ( satisfy (\x -> isAscii x && x /= ':' && x /= '\r')
+        ( satisfy (\x -> isAscii x && x /= ':' && not (isSpace x))
         )
-
-stringL = many (satisfy isAlpha <|> char '/')
-ws = satisfy isSpace
-
-eof = Parser $ const (Just (("", "", ""), ""))
 
 ------------------------------------------------------
 
--- OPTIM: Major optimizations required
-parseH t =
+parseHttp t =
     let Just (result, _) = parse ((,) <$> request <*> many keys) t
      in result
-
---   fst <$> fromJust (mapM k t)
--- where
---   k = parse $ (,) <$> request <*> keys
-
--- k = parse $ request <|> eof

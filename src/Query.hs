@@ -74,3 +74,4 @@ managequeries i conn = do
         else do
             r <- query (method a) b
             sendStr conn r
+            close conn

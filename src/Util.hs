@@ -1,4 +1,5 @@
 module Util (
+    maxConns,
     handle,
     forever,
     sendAll,
@@ -70,3 +71,6 @@ notFound = "/home/tonytomcat/Downloads/PortFolio/notFound.html"
 
 -- sample website for testing
 rootFile = "/home/tonytomcat/Downloads/PortFolio/index.html"
+
+maxConns :: Int
+maxConns = 20
