@@ -4,9 +4,9 @@ module Query where
 
 import Control.Exception
 import Control.Monad
-import Data.Bits (Bits (xor))
 import Data.Either
 import Data.Time
+import System.IO
 import Util
 
 -- NOTE: I will refactor the mess below. Feel free to refactor, and submit a pr.
@@ -27,10 +27,17 @@ data Response = Response String String String deriving (Show)
 sendStr conn = sendAll conn . packStr . con
 con (Response status headers content) = status <> headers <> content
 
+filetype :: FilePath -> String
+filetype f =
+    let ext = (tail . takeExtension) f
+     in if ext `elem` ["jpeg", "svg", "png", "webp"]
+            then "image/" <> ext
+            else "text/" <> ext
+
 safeRead :: String -> IO (String, String, String, String, String)
 safeRead file = do
     time <- getCurrentTime
-    state <- try ((readFile . tail) file) :: IO (Either SomeException String)
+    state <- try (withBinaryFile (tail file) ReadMode hGetContents') :: IO (Either SomeException String)
     if file == "/"
         then do
             t <- readFile rootFile
@@ -40,7 +47,7 @@ safeRead file = do
                 then do
                     t <- readFile notFound
                     return ("404 Not Found", show time, "html", showlen t, t)
-                else return ("200 OK", show time, showext file, (showlen . fromRight "") state, fromRight "" state)
+                else return ("200 OK", show time, filetype file, (showlen . fromRight "") state, fromRight "" state)
   where
     showlen = show . length
     showext = tail . takeExtension
@@ -57,14 +64,14 @@ query HEAD f = do
     return $
         Response
             ("HTTP/1.1 " <> status)
-            ("\nDate: " <> time <> "\nContent-Type: text/" <> extension <> "\nContent-Length: " <> length)
+            ("\nDate: " <> time <> "\nContent-Type: " <> extension <> "\nContent-Length: " <> length)
             "\n\n"
 query GET f = do
     (status, time, extension, length, content) <- safeRead f
     return $
         Response
             ("HTTP/1.1 " <> status)
-            ("\nDate: " <> time <> "\nContent-Type: text/" <> extension <> "\nContent-Length: " <> length)
+            ("\nDate: " <> time <> "\nContent-Type: " <> extension <> "\nContent-Length: " <> length)
             ("\n\n" <> content)
 
 managequeries i conn = do
