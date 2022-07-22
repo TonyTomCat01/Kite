@@ -48,6 +48,6 @@ tests:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
-    - -O2
+    - -O4
     dependencies:
     - Kite

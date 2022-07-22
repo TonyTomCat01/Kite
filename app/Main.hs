@@ -28,11 +28,16 @@ manageConnections sock =
                 return ()
     returnFstParseUnpack = return . fst . parseHttp . unpackStr
 
-main :: IO ()
-main = do
+initialize :: IO Socket
+initialize = do
     logVal "\n\nStarting"
     sock <- socket AF_INET Stream 0
     setSocketOption sock ReuseAddr 1
     bind sock (SockAddrInet 1337 $ tupleToHostAddress (0, 0, 0, 0))
+    return sock
+
+main :: IO ()
+main = do
+    sock <- initialize
     listen sock maxConns
     manageConnections sock

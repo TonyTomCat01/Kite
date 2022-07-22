@@ -5,6 +5,7 @@ module Parser (
     parseHttp,
     parse,
     stringLiteral,
+    string,
     char,
     request,
     host,
@@ -15,6 +16,7 @@ import Control.Applicative
 import Control.Monad
 import Data.Char
 import Data.Maybe
+import Log
 
 -- | NewType Declaration
 
@@ -68,9 +70,7 @@ char :: Char -> Parser Char
 char c = satisfy (== c)
 
 string :: String -> Parser String
-string = mapM char
-
--- OPTIM: Can these be more efficient?
+string = traverse char
 
 request =
     (\x _ y _ z _ -> (x, y, z))
@@ -79,18 +79,16 @@ request =
         <*> query
         <*> satisfy isSpace
         <*> version
-        <*> string "\r"
+        <*> (string "\r" <|> string "\n" <|> string "")
   where
     method =
         string "GET"
             <|> string "HEAD"
-            <|> string "POST"
-            <|> string "DELETE"
     query =
         many
             ( satisfy
                 ( \x ->
-                    isAlpha x
+                    isAlphaNum x
                         || x == '/'
                         || x == '.'
                 )
@@ -99,8 +97,7 @@ request =
         many
             ( satisfy
                 ( \x ->
-                    isAlpha x
-                        || isDigit x
+                    isAlphaNum x
                         || x == '/'
                         || x == '.'
                 )
@@ -131,11 +128,11 @@ keys =
         <$> stringLiteral
         <*> string ": "
         <*> stringLiteral
-        <*> satisfy isSpace
+        <*> (string "\r" <|> string "\n" <|> string "")
 
 stringLiteral =
     many
-        ( satisfy (\x -> isAscii x && x /= ':' && not (isSpace x))
+        ( satisfy (\x -> isAscii x && x /= ':' && (not . isSpace) x)
         )
 
 ------------------------------------------------------

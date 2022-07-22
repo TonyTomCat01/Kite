@@ -64,7 +64,7 @@ test-suite Kite-test
       Paths_Kite
   hs-source-dirs:
       test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -O4
   build-depends:
       Kite
     , base
